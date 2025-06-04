@@ -45,7 +45,7 @@ func (id ID) IsNil() bool {
 // Scan implements sql.Scanner.
 func (id *ID) Scan(src any) (err error) {
 	switch v := src.(type) {
-	case int64:
+	case uint64:
 		*id = ID(v)
 	case nil:
 		*id = 0
@@ -62,5 +62,5 @@ func (id ID) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	return int64(id), nil
+	return uint64(id), nil
 }

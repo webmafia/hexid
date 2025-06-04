@@ -45,8 +45,9 @@ func (id ID) IsNil() bool {
 // Scan implements sql.Scanner.
 func (id *ID) Scan(src any) (err error) {
 	switch v := src.(type) {
-	case uint64:
 	case int64:
+		*id = ID(uint64(v))
+	case uint64:
 		*id = ID(v)
 	case nil:
 		*id = 0

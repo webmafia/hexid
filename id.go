@@ -31,3 +31,11 @@ func (id ID) Time() time.Time {
 func (id ID) Uint64() uint64 {
 	return uint64(id)
 }
+
+func (id ID) IsZero() bool {
+	return id == 0
+}
+
+func (id ID) IsNil() bool {
+	return id == 0
+}

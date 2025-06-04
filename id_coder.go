@@ -79,6 +79,11 @@ func (id ID) MarshalJSON() (b []byte, err error) {
 // UnmarshalJSON implements json.Unmarshaler.
 func (id *ID) UnmarshalJSON(b []byte) (err error) {
 	if len(b) != 18 || b[0] != '"' || b[17] != '"' {
+		if len(b) == 4 && b[0] == 'n' && b[1] == 'u' && b[2] == 'l' && b[3] == 'l' {
+			*id = 0
+			return
+		}
+
 		return errors.New("invalid ID")
 	}
 

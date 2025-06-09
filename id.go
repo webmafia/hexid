@@ -64,5 +64,5 @@ func (id ID) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	return uint64(id), nil
+	return int64(id), nil
 }

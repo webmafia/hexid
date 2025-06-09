@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/webmafia/fast"
 )
@@ -16,10 +17,12 @@ const (
 )
 
 var (
-	_ encoding.TextAppender   = ID(0)
-	_ encoding.BinaryAppender = ID(0)
-	_ json.Marshaler          = ID(0)
-	_ json.Unmarshaler        = (*ID)(nil)
+	_ encoding.TextAppender    = ID(0)
+	_ encoding.BinaryAppender  = ID(0)
+	_ encoding.TextMarshaler   = ID(0)
+	_ encoding.TextUnmarshaler = (*ID)(nil)
+	_ json.Marshaler           = ID(0)
+	_ json.Unmarshaler         = (*ID)(nil)
 )
 
 func IDFromString(str string) (id ID, err error) {
@@ -64,10 +67,6 @@ func (id ID) AppendBinary(b []byte) ([]byte, error) {
 
 // MarshalJSON implements json.Marshaler.
 func (id ID) MarshalJSON() (b []byte, err error) {
-	if id.IsNil() {
-		return []byte("null"), nil
-	}
-
 	b = make([]byte, 0, 18)
 	b = append(b, '"')
 	b, err = id.AppendText(b)
@@ -78,15 +77,38 @@ func (id ID) MarshalJSON() (b []byte, err error) {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (id *ID) UnmarshalJSON(b []byte) (err error) {
-	if len(b) != 18 || b[0] != '"' || b[17] != '"' {
-		if len(b) == 4 && b[0] == 'n' && b[1] == 'u' && b[2] == 'l' && b[3] == 'l' {
-			*id = 0
-			return
-		}
 
-		return errors.New("invalid ID")
+	// Parse string ID (with quotes)
+	if len(b) == 18 && b[0] != '"' && b[17] != '"' {
+		*id, err = IDFromString(fast.BytesToString(b[1:17]))
+		return
 	}
 
-	*id, err = IDFromString(fast.BytesToString(b[1:17]))
+	// Parse null value (no quotes)
+	if len(b) == 4 && string(b) == "null" {
+		*id = 0
+		return
+	}
+
+	// Parse integer (no quote)
+	if v, err := strconv.ParseUint(fast.BytesToString(b), 10, 64); err == nil {
+		*id = ID(v)
+		return nil
+	}
+
+	return errors.New("invalid ID")
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (id ID) MarshalText() (text []byte, err error) {
+	text = make([]byte, 0, 16)
+	text, err = id.AppendText(text)
+
+	return
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (id *ID) UnmarshalText(text []byte) (err error) {
+	*id, err = IDFromString(fast.BytesToString(text))
 	return
 }

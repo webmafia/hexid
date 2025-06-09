@@ -67,6 +67,10 @@ func (id ID) AppendBinary(b []byte) ([]byte, error) {
 
 // MarshalJSON implements json.Marshaler.
 func (id ID) MarshalJSON() (b []byte, err error) {
+	if id == 0 {
+		return []byte{'n', 'u', 'l', 'l'}, nil
+	}
+
 	b = make([]byte, 0, 18)
 	b = append(b, '"')
 	b, err = id.AppendText(b)

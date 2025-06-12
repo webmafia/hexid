@@ -83,7 +83,7 @@ func (id ID) MarshalJSON() (b []byte, err error) {
 func (id *ID) UnmarshalJSON(b []byte) (err error) {
 
 	// Parse string ID (with quotes)
-	if len(b) == 18 && b[0] != '"' && b[17] != '"' {
+	if len(b) == 18 && b[0] == '"' && b[17] == '"' {
 		*id, err = IDFromString(fast.BytesToString(b[1:17]))
 		return
 	}

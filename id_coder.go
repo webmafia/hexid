@@ -139,8 +139,10 @@ func (id *ID) Scan(src any) (err error) {
 	case []byte:
 		if len(v) == 8 {
 			*id = ID(binary.BigEndian.Uint64(v))
+		} else if len(v) == 16 {
+			*id, err = IDFromString(fast.BytesToString(v))
 		} else {
-			err = fmt.Errorf("cannot scan %T to %T", v, id)
+			err = fmt.Errorf("cannot scan %T of length %d to %T", v, len(v), id)
 		}
 	case string:
 		*id, err = IDFromString(v)

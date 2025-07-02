@@ -1,14 +1,18 @@
 package hexid
 
 import (
+	"database/sql"
+	"database/sql/driver"
 	"encoding"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/webmafia/fast"
+	"github.com/webmafia/hexid/valuer"
 )
 
 const (
@@ -23,6 +27,8 @@ var (
 	_ encoding.TextUnmarshaler = (*ID)(nil)
 	_ json.Marshaler           = ID(0)
 	_ json.Unmarshaler         = (*ID)(nil)
+	_ sql.Scanner              = (*ID)(nil)
+	_ driver.Valuer            = ID(0)
 )
 
 func IDFromString(str string) (id ID, err error) {
@@ -44,6 +50,12 @@ func IDFromString(str string) (id ID, err error) {
 	original := scrambled * invMultiplier
 
 	return ID(original), nil
+}
+
+// Returns raw representation of the ID as 8 big-endian bytes.
+func (id ID) Bytes() []byte {
+	b, _ := id.AppendBinary(make([]byte, 0, 8))
+	return b
 }
 
 func (id ID) String() string {
@@ -115,4 +127,53 @@ func (id ID) MarshalText() (text []byte, err error) {
 func (id *ID) UnmarshalText(text []byte) (err error) {
 	*id, err = IDFromString(fast.BytesToString(text))
 	return
+}
+
+// Scan implements sql.Scanner.
+func (id *ID) Scan(src any) (err error) {
+	switch v := src.(type) {
+	case int64:
+		*id = ID(v)
+	case uint64:
+		*id = ID(v)
+	case []byte:
+		if len(v) == 8 {
+			*id = ID(binary.BigEndian.Uint64(v))
+		} else {
+			err = fmt.Errorf("cannot scan %T to %T", v, id)
+		}
+	case string:
+		*id, err = IDFromString(v)
+	case nil:
+		*id = 0
+	default:
+		err = fmt.Errorf("cannot scan %T to %T", v, id)
+	}
+
+	return
+}
+
+// Value implements driver.Valuer.
+func (id ID) Value() (driver.Value, error) {
+	if id.IsNil() {
+		return nil, nil
+	}
+
+	switch typ := getValuerType(); typ {
+
+	case valuer.Int64Valuer:
+		return int64(id), nil
+
+	case valuer.Uint64Valuer:
+		return uint64(id), nil
+
+	case valuer.StringValuer:
+		return id.String(), nil
+
+	case valuer.BinaryValuer:
+		return id.Bytes(), nil
+
+	default:
+		return nil, fmt.Errorf("invalid ValuerType: %d", typ)
+	}
 }

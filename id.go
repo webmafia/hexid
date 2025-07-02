@@ -1,8 +1,6 @@
 package hexid
 
 import (
-	"database/sql/driver"
-	"fmt"
 	"time"
 )
 
@@ -40,29 +38,4 @@ func (id ID) IsZero() bool {
 
 func (id ID) IsNil() bool {
 	return id == 0
-}
-
-// Scan implements sql.Scanner.
-func (id *ID) Scan(src any) (err error) {
-	switch v := src.(type) {
-	case int64:
-		*id = ID(uint64(v))
-	case uint64:
-		*id = ID(v)
-	case nil:
-		*id = 0
-	default:
-		err = fmt.Errorf("cannot scan %T to %T", v, id)
-	}
-
-	return
-}
-
-// Value implements driver.Valuer.
-func (id ID) Value() (driver.Value, error) {
-	if id.IsNil() {
-		return nil, nil
-	}
-
-	return uint64(id), nil
 }

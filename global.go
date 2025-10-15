@@ -5,7 +5,7 @@ import "time"
 var gen AtomicGenerator
 
 func init() {
-	gen = NewAtomicGenerator()
+	gen, _ = NewAtomicGenerator()
 }
 
 // Atomically generates the next ID based on current time. Thread-safe.

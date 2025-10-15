@@ -1,19 +1,45 @@
 package hexid
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
 
+func ExampleGenerator() {
+	g, err := NewGenerator()
+
+	if err != nil {
+		panic(err)
+	}
+
+	// Ensure a deterministic sequence in this example
+	g.seq = 1
+
+	ts := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	for range 4 {
+		id := g.IDFromTime(ts)
+		fmt.Println(id)
+	}
+
+	// Output:
+	//
+	// 58c1fa4a4a00ca4f
+	// c7af08e7eeda149e
+	// 369c178593b35eed
+	// a5892623388ca93c
+}
+
 func BenchmarkGenerator(b *testing.B) {
 	b.Run("New", func(b *testing.B) {
 		for range b.N {
-			_ = NewGenerator()
+			_, _ = NewGenerator()
 		}
 	})
 
 	b.Run("ID", func(b *testing.B) {
-		g := NewGenerator()
+		g, _ := NewGenerator()
 		b.ResetTimer()
 
 		for range b.N {
@@ -22,7 +48,7 @@ func BenchmarkGenerator(b *testing.B) {
 	})
 
 	b.Run("IDFromTime", func(b *testing.B) {
-		g := NewGenerator()
+		g, _ := NewGenerator()
 		ts := time.Now()
 		b.ResetTimer()
 
@@ -35,12 +61,12 @@ func BenchmarkGenerator(b *testing.B) {
 func BenchmarkAtomicGenerator(b *testing.B) {
 	b.Run("New", func(b *testing.B) {
 		for range b.N {
-			_ = NewAtomicGenerator()
+			_, _ = NewAtomicGenerator()
 		}
 	})
 
 	b.Run("ID", func(b *testing.B) {
-		g := NewAtomicGenerator()
+		g, _ := NewAtomicGenerator()
 		b.ResetTimer()
 
 		for range b.N {
@@ -49,7 +75,7 @@ func BenchmarkAtomicGenerator(b *testing.B) {
 	})
 
 	b.Run("IDFromTime", func(b *testing.B) {
-		g := NewAtomicGenerator()
+		g, _ := NewAtomicGenerator()
 		ts := time.Now()
 		b.ResetTimer()
 
@@ -76,7 +102,7 @@ func TestGeneratorWrapAroundDoesNotDuplicate(t *testing.T) {
 	fixedTime := time.Unix(1600000000, 123456000)
 
 	// Create a generator and force the sequence to the maximum effective value.
-	g := NewGenerator()
+	g, _ := NewGenerator()
 	// Set the sequence such that the effective sequence (seq & 0x3FFFFF)
 	// is (1<<22)-1, i.e. 4194303.
 	g.seq = (1 << 22) - 1

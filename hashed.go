@@ -1,36 +1,28 @@
 package hexid
 
-import (
-	"github.com/webmafia/fast"
-)
+// nodeMask clears bits 20–15 (the 6-bit node field) while keeping all other bits intact.
+const nodeMask uint64 = ^(uint64(0x3F) << 15) & 0x7FFFFFFFFFFFFFFF
 
-// Produces a deterministic ID from string(s). The timestamp part of the resulting ID
-// will be be pointless, but guaranteed to be before 2004-01-10 13:37:04 UTC.
+// HashedID produces a deterministic 63-bit ID from one or more strings.
+// The resulting ID is based on an FNV-1a hash and always has node ID = 0.
+// The timestamp portion is meaningless but guaranteed not to collide
+// with time-based IDs, since those always have node ≥ 1.
 func HashedID(s ...string) ID {
-	// Hash the input with FNV-1a.
 	h := newFnv64a()
 
-	for _, s := range s {
-		h.Write(fast.StringToBytes(s))
+	for _, str := range s {
+		h.Write(s2b(str))
 	}
 
 	id := h.Sum64()
-
-	// Clamp the timestamp (32 first bits) to 2004-01-10 13:37:04 UTC.
-	// We do this to ensure that it's impossible to get a collision with an ID of the future.
-	return ID(id & 0x3FFFFFFFFFFFFFFF)
+	return ID(id & nodeMask)
 }
 
-// Produces a deterministic ID from a byte slice. The timestamp part of the resulting ID
-// will be be pointless, but guaranteed to be before 2004-01-10 13:37:04 UTC.
+// HashedIDBytes produces a deterministic 63-bit ID from a byte slice.
+// The resulting ID always has node ID = 0.
 func HashedIDBytes(b []byte) ID {
-
-	// Hash the input with FNV-1a.
 	h := newFnv64a()
 	h.Write(b)
 	id := h.Sum64()
-
-	// Clamp the timestamp (32 first bits) to 2004-01-10 13:37:04 UTC.
-	// We do this to ensure that it's impossible to get a collision with an ID of the future.
-	return ID(id & 0x3FFFFFFFFFFFFFFF)
+	return ID(id & nodeMask)
 }

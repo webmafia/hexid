@@ -11,13 +11,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/webmafia/fast"
 	"github.com/webmafia/hexid/valuer"
 )
 
 const (
-	multiplier    uint64 = 0x9e3779b97f4a7c15
-	invMultiplier uint64 = 0xf1de83e19937733d
+	multiplier    uint64 = 0x6eed0e9da4d94a4f
+	invMultiplier uint64 = 0x2f72b4215a3d8caf
 )
 
 var (
@@ -33,7 +32,7 @@ var (
 
 func IDFromString(str string) (id ID, err error) {
 	var buf [8]byte
-	n, err := hex.Decode(buf[:], fast.StringToBytes(str))
+	n, err := hex.Decode(buf[:], s2b(str))
 
 	if err != nil {
 		return
@@ -60,7 +59,7 @@ func (id ID) Bytes() []byte {
 
 func (id ID) String() string {
 	b, _ := id.AppendText(make([]byte, 0, 16))
-	return fast.BytesToString(b)
+	return b2s(b)
 }
 
 // AppendBinary implements internal.TextAppender.
@@ -96,7 +95,7 @@ func (id *ID) UnmarshalJSON(b []byte) (err error) {
 
 	// Parse string ID (with quotes)
 	if len(b) == 18 && b[0] == '"' && b[17] == '"' {
-		*id, err = IDFromString(fast.BytesToString(b[1:17]))
+		*id, err = IDFromString(b2s(b[1:17]))
 		return
 	}
 
@@ -107,7 +106,7 @@ func (id *ID) UnmarshalJSON(b []byte) (err error) {
 	}
 
 	// Parse integer (no quote)
-	if v, err := strconv.ParseUint(fast.BytesToString(b), 10, 64); err == nil {
+	if v, err := strconv.ParseUint(b2s(b), 10, 64); err == nil {
 		*id = ID(v)
 		return nil
 	}
@@ -125,7 +124,7 @@ func (id ID) MarshalText() (text []byte, err error) {
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (id *ID) UnmarshalText(text []byte) (err error) {
-	*id, err = IDFromString(fast.BytesToString(text))
+	*id, err = IDFromString(b2s(text))
 	return
 }
 
@@ -140,7 +139,7 @@ func (id *ID) Scan(src any) (err error) {
 		if len(v) == 8 {
 			*id = ID(binary.BigEndian.Uint64(v))
 		} else if len(v) == 16 {
-			*id, err = IDFromString(fast.BytesToString(v))
+			*id, err = IDFromString(b2s(v))
 		} else {
 			err = fmt.Errorf("cannot scan %T of length %d to %T", v, len(v), id)
 		}
@@ -164,10 +163,10 @@ func (id ID) Value() (driver.Value, error) {
 	switch typ := getValuerType(); typ {
 
 	case valuer.Int64Valuer:
-		return int64(id), nil
+		return id.Int64(), nil
 
 	case valuer.Uint64Valuer:
-		return uint64(id), nil
+		return id.Uint64(), nil
 
 	case valuer.StringValuer:
 		return id.String(), nil

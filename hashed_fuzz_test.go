@@ -1,9 +1,7 @@
-package fuzz_test
+package hexid
 
 import (
 	"testing"
-
-	"github.com/webmafia/hexid"
 )
 
 func FuzzHashedIDNoCollisions(f *testing.F) {
@@ -11,8 +9,8 @@ func FuzzHashedIDNoCollisions(f *testing.F) {
 		if a == b {
 			return // Skip identical inputs
 		}
-		ida := hexid.HashedID(a)
-		idb := hexid.HashedID(b)
+		ida := HashedID(a)
+		idb := HashedID(b)
 
 		if ida == idb {
 			t.Errorf("Collision detected: HashedID(%q) == HashedID(%q) == %d", a, b, ida)

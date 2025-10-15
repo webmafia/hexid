@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/webmafia/fast"
 	"github.com/webmafia/hexid/valuer"
 )
 
@@ -33,7 +32,7 @@ var (
 
 func IDFromString(str string) (id ID, err error) {
 	var buf [8]byte
-	n, err := hex.Decode(buf[:], fast.StringToBytes(str))
+	n, err := hex.Decode(buf[:], s2b(str))
 
 	if err != nil {
 		return
@@ -60,7 +59,7 @@ func (id ID) Bytes() []byte {
 
 func (id ID) String() string {
 	b, _ := id.AppendText(make([]byte, 0, 16))
-	return fast.BytesToString(b)
+	return b2s(b)
 }
 
 // AppendBinary implements internal.TextAppender.
@@ -96,7 +95,7 @@ func (id *ID) UnmarshalJSON(b []byte) (err error) {
 
 	// Parse string ID (with quotes)
 	if len(b) == 18 && b[0] == '"' && b[17] == '"' {
-		*id, err = IDFromString(fast.BytesToString(b[1:17]))
+		*id, err = IDFromString(b2s(b[1:17]))
 		return
 	}
 
@@ -107,7 +106,7 @@ func (id *ID) UnmarshalJSON(b []byte) (err error) {
 	}
 
 	// Parse integer (no quote)
-	if v, err := strconv.ParseUint(fast.BytesToString(b), 10, 64); err == nil {
+	if v, err := strconv.ParseUint(b2s(b), 10, 64); err == nil {
 		*id = ID(v)
 		return nil
 	}
@@ -125,7 +124,7 @@ func (id ID) MarshalText() (text []byte, err error) {
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (id *ID) UnmarshalText(text []byte) (err error) {
-	*id, err = IDFromString(fast.BytesToString(text))
+	*id, err = IDFromString(b2s(text))
 	return
 }
 
@@ -140,7 +139,7 @@ func (id *ID) Scan(src any) (err error) {
 		if len(v) == 8 {
 			*id = ID(binary.BigEndian.Uint64(v))
 		} else if len(v) == 16 {
-			*id, err = IDFromString(fast.BytesToString(v))
+			*id, err = IDFromString(b2s(v))
 		} else {
 			err = fmt.Errorf("cannot scan %T of length %d to %T", v, len(v), id)
 		}

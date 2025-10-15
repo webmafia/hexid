@@ -1,9 +1,5 @@
 package hexid
 
-import (
-	"github.com/webmafia/fast"
-)
-
 // nodeMask clears bits 20–15 (the 6-bit node field) while keeping all other bits intact.
 const nodeMask uint64 = ^(uint64(0x3F) << 15) & 0x7FFFFFFFFFFFFFFF
 
@@ -15,7 +11,7 @@ func HashedID(s ...string) ID {
 	h := newFnv64a()
 
 	for _, str := range s {
-		h.Write(fast.StringToBytes(str))
+		h.Write(s2b(str))
 	}
 
 	id := h.Sum64()

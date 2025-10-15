@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	multiplier    uint64 = 0x9e3779b97f4a7c15
-	invMultiplier uint64 = 0xf1de83e19937733d
+	multiplier    uint64 = 0x6eed0e9da4d94a4f
+	invMultiplier uint64 = 0x2f72b4215a3d8caf
 )
 
 var (
@@ -164,10 +164,10 @@ func (id ID) Value() (driver.Value, error) {
 	switch typ := getValuerType(); typ {
 
 	case valuer.Int64Valuer:
-		return int64(id), nil
+		return id.Int64(), nil
 
 	case valuer.Uint64Valuer:
-		return uint64(id), nil
+		return id.Uint64(), nil
 
 	case valuer.StringValuer:
 		return id.String(), nil

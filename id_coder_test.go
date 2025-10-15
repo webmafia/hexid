@@ -6,7 +6,7 @@ import (
 
 func BenchmarkID_AppendText(b *testing.B) {
 	var buf []byte
-	g := NewGenerator()
+	g, _ := NewGenerator()
 	id := g.ID()
 	b.ResetTimer()
 

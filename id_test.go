@@ -7,43 +7,52 @@ import (
 
 // TestIDEncodingDecoding verifies that encoding an ID with newID()
 // and then extracting its components gives back the original values.
+//
+// Layout under test (63 bits total):
+// [32 bits seconds][10 bits ms][6 bits node][15 bits seq]
 func TestIDEncodingDecoding(t *testing.T) {
-	// Define test cases with various timestamps and sequence numbers
 	testCases := []struct {
 		timestamp time.Time
-		seq       uint32
+		node      uint8
+		seq       uint16
 	}{
-		{time.Unix(1708400000, 123_000_000), 42},      // Normal case
-		{time.Unix(1600000000, 999_000_000), 1023},    // Edge case: high milliseconds
-		{time.Unix(1500000000, 0), 0},                 // Edge case: zero milliseconds, zero sequence
-		{time.Unix(1800000000, 500_000_000), 4194303}, // Max sequence (22 bits)
+		{time.Unix(1708400000, 123_000_000), 1, 42},     // normal case
+		{time.Unix(1600000000, 999_000_000), 7, 32767},  // max ms + max seq
+		{time.Unix(1500000000, 0), 0, 0},                // all zero
+		{time.Unix(1800000000, 500_000_000), 63, 12345}, // max node
 	}
 
 	for _, tc := range testCases {
-		// Generate ID
-		id := newID(tc.timestamp, tc.seq)
+		id := newID(tc.timestamp, tc.node, tc.seq)
 
-		// Validate Unix timestamp
-		if id.Unix() != uint32(tc.timestamp.Unix()) {
-			t.Errorf("Unix() mismatch: got %d, want %d", id.Unix(), uint32(tc.timestamp.Unix()))
+		// Check timestamp seconds
+		if got := id.Unix(); got != uint32(tc.timestamp.Unix()) {
+			t.Errorf("Unix() mismatch: got %d, want %d", got, tc.timestamp.Unix())
 		}
 
-		// Validate sequence number
-		if id.Seq() != (tc.seq & 0x3FFFFF) { // Ensure it fits 22-bit mask
-			t.Errorf("Seq() mismatch: got %d, want %d", id.Seq(), tc.seq&0x3FFFFF)
+		// Check milliseconds
+		wantMS := uint16(tc.timestamp.Nanosecond() / 1_000_000)
+		if got := id.Millis(); got != wantMS {
+			t.Errorf("Millis() mismatch: got %d, want %d", got, wantMS)
 		}
 
-		// Validate reconstructed time
-		reconstructedTime := id.Time()
-		if reconstructedTime.Unix() != tc.timestamp.Unix() {
-			t.Errorf("Time() mismatch: Unix seconds got %d, want %d", reconstructedTime.Unix(), tc.timestamp.Unix())
+		// Check node
+		if got := id.Node(); got != tc.node {
+			t.Errorf("Node() mismatch: got %d, want %d", got, tc.node)
 		}
 
-		// Validate milliseconds part
-		expectedMS := tc.timestamp.Nanosecond() / 1_000_000
-		reconstructedMS := reconstructedTime.Nanosecond() / 1_000_000
-		if reconstructedMS != expectedMS {
-			t.Errorf("Time() mismatch: milliseconds got %d, want %d", reconstructedMS, expectedMS)
+		// Check sequence
+		if got := id.Seq(); got != tc.seq&0x7FFF { // 15 bits
+			t.Errorf("Seq() mismatch: got %d, want %d", got, tc.seq&0x7FFF)
+		}
+
+		// Reconstruct time
+		reconstructed := id.Time()
+		if reconstructed.Unix() != tc.timestamp.Unix() {
+			t.Errorf("Time() seconds mismatch: got %d, want %d", reconstructed.Unix(), tc.timestamp.Unix())
+		}
+		if ms := reconstructed.Nanosecond() / 1_000_000; uint16(ms) != wantMS {
+			t.Errorf("Time() milliseconds mismatch: got %d, want %d", ms, wantMS)
 		}
 	}
 }

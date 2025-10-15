@@ -6,13 +6,16 @@ import (
 )
 
 func ExampleHashedID() {
-	fmt.Println(HashedID("foobar"))
-	fmt.Println(HashedID("foobaz"))
+	a := HashedID("foobar")
+	b := HashedID("foobaz")
+
+	fmt.Println(a.Hashed(), a)
+	fmt.Println(b.Hashed(), b)
 
 	// Output:
 	//
-	// 06e441e53719e608
-	// f0e4e84ada932890
+	// true 45ecc9eb54b12098
+	// true 951ba2f26ae6feb0
 }
 
 func BenchmarkHashedID(b *testing.B) {

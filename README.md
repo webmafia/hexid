@@ -141,7 +141,7 @@ Generating an ID takes ~40 ns on a modern CPU thread (~25 000 IDs/ms). Each ID i
 
 ---
 
-## Benchmark
+## ⚡ Benchmark
 ```
 goos: darwin
 goarch: arm64

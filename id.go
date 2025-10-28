@@ -69,6 +69,12 @@ func (id ID) Seq() uint16 {
 	return uint16(id & 0x7FFF)
 }
 
+// Entropy returns everything after the Unix timestamp seconds (milliseconds + node + sequence)
+func (id ID) Entropy() uint32 {
+	// Extract the lower 31 bits: milliseconds (10) + node (6) + sequence (15)
+	return uint32(id & 0x7FFFFFFF)
+}
+
 // Time reconstructs the approximate creation time of the ID.
 func (id ID) Time() time.Time {
 	if id.Hashed() {

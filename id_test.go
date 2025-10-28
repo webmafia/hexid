@@ -98,3 +98,39 @@ func TestSequenceOverflow(t *testing.T) {
 		t.Fatalf("node changed on overflow: %d vs %d", id1.Node(), id2.Node())
 	}
 }
+
+func TestID_TimestampAndEntropy(t *testing.T) {
+	ts := time.Unix(1730000000, 123_000_000) // 123 ms
+	id := IDFromTime(ts)
+
+	// Seconds must match
+	if got, want := int64(id.Unix()), ts.Unix(); got != want {
+		t.Fatalf("Unix seconds mismatch: got %d, want %d", got, want)
+	}
+
+	entropy := id.Entropy()
+	if entropy > 0x7FFFFFFF {
+		t.Fatalf("entropy overflow: %032b", entropy)
+	}
+
+	const (
+		msShift   = 6 + 15
+		nodeShift = 15
+
+		msMask   = (1 << 10) - 1
+		nodeMask = (1 << 6) - 1
+		seqMask  = (1 << 15) - 1
+	)
+
+	ms := (entropy >> msShift) & msMask
+	if ms != 123 {
+		t.Fatalf("milliseconds mismatch: got %d, want %d", ms, 123)
+	}
+
+	// Optional sanity checks (node/sequence present but unknown here)
+	_ = (entropy >> nodeShift) & nodeMask // node
+	_ = entropy & seqMask                 // sequence
+
+	t.Logf("id:      %064b", id)
+	t.Logf("entropy: %031b", entropy)
+}

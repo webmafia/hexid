@@ -153,6 +153,7 @@ BenchmarkGenerator/IDFromTime-10            557195217             2.162 ns/op   
 BenchmarkAtomicGenerator/New-10             180172480             6.674 ns/op           0 B/op           0 allocs/op
 BenchmarkAtomicGenerator/ID-10               29088128            44.700 ns/op           0 B/op           0 allocs/op
 BenchmarkAtomicGenerator/IDFromTime-10      173841322             6.885 ns/op           0 B/op           0 allocs/op
+BenchmarkHashedID-10                        248941737             4.733 ns/op           0 B/op           0 allocs/op
 ```
 
 ## ⚖️ License

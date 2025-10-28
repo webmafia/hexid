@@ -15,7 +15,7 @@ All encoding and decoding are fully deterministic between Go and PostgreSQL.
 - **🐘 Compact & efficient:** 63-bit IDs fit safely in Postgres `BIGINT`.  
 - **⏱️ Time-sortable:** Encodes seconds + milliseconds for chronological order.  
 - **🌍 Distribution-safe:** 6-bit node field (up to 63 nodes).  
-- **💥 High throughput:** ~4 million IDs/ms per node (~40 ns per ID).  
+- **💥 High throughput:** ~25 million IDs/s per node (~40 ns per ID).  
 - **🧠 Deterministic:** Identical encoding and decoding in Go and PostgreSQL.  
 - **🔒 Hash mode:** Deterministic `HashedID()` for stable, non-time-based IDs.  
 
@@ -46,13 +46,13 @@ import "github.com/webmafia/hexid"
 X = unused (sign bit of int64)
 ````
 
-| Field        | Bits        | Range             | Purpose                  |
-| ------------ | ----------- | ----------------- | ------------------------ |
-| Seconds      | 32          | 0 – 4,294,967,295 | Valid until year 2106    |
-| Milliseconds | 10          | 0 – 999           | Sub-second precision     |
-| Node         | 6           | 1 – 63            | Up to 63 generator nodes |
-| Sequence     | 15          | 0 – 32 767        | Per-ms per-node counter  |
-| **Total**    | **63 bits** | < 2⁶³             | Safe in signed `BIGINT`  |
+| Field        | Bits        | Range             | Purpose                                                                                           |
+| ------------ | ----------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| Seconds      | 32          | 0 – 4,294,967,295 | Valid until year 2106                                                                             |
+| Milliseconds | 10          | 0 – 999           | Sub-second precision                                                                              |
+| Node         | 6           | 1 – 63            | Up to 63 generator nodes (`0` is reserved for [hashed IDs](#4-deterministic-non-time-hashed-ids)) |
+| Sequence     | 15          | 0 – 32 767        | Per-ms per-node counter                                                                           |
+| **Total**    | **63 bits** | < 2⁶³             | Safe in signed `BIGINT`                                                                           |
 
 ---
 
@@ -133,6 +133,27 @@ $$ LANGUAGE sql IMMUTABLE STRICT;
 These produce and decode exactly the same hex values as Go’s `String()` / `IDFromString()`.
 
 ---
+
+## 🧬 Collisions and ID Uniqueness
+Generating an ID takes ~40 ns on a modern CPU thread (~25 000 IDs/ms). Each ID includes a millisecond timestamp and a 15-bit sequence counter (max = 32 767). IDs are guaranteed unique as long as:
+- the generator’s node ID is unique, and
+- the generation rate does not exceed ~32 767 IDs/ms (~30 ns per ID), preventing sequence overflow within a single millisecond.
+
+---
+
+## Benchmark
+```
+goos: darwin
+goarch: arm64
+pkg: github.com/webmafia/hexid
+cpu: Apple M1 Pro
+BenchmarkGenerator/New-10                   176147698             6.669 ns/op           0 B/op           0 allocs/op
+BenchmarkGenerator/ID-10                     28672035            42.550 ns/op           0 B/op           0 allocs/op
+BenchmarkGenerator/IDFromTime-10            557195217             2.162 ns/op           0 B/op           0 allocs/op
+BenchmarkAtomicGenerator/New-10             180172480             6.674 ns/op           0 B/op           0 allocs/op
+BenchmarkAtomicGenerator/ID-10               29088128            44.700 ns/op           0 B/op           0 allocs/op
+BenchmarkAtomicGenerator/IDFromTime-10      173841322             6.885 ns/op           0 B/op           0 allocs/op
+```
 
 ## ⚖️ License
 

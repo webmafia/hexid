@@ -1,6 +1,7 @@
 package hexid
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -34,4 +35,21 @@ func TestMultiplierInverse(t *testing.T) {
 	if product != 1 {
 		t.Errorf("Expected multiplier * invMultiplier mod 2^64 to equal 1, got %x", product)
 	}
+}
+
+func Example_coder() {
+	id := ID(123)
+	fmt.Println(id)
+
+	// Output: 4be605be3466b3f5
+}
+
+func ExampleIDFromString() {
+	_, err := IDFromString("3784432400289806371")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output: invalid ID
 }

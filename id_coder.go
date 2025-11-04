@@ -31,6 +31,10 @@ var (
 )
 
 func IDFromString(str string) (id ID, err error) {
+	if len(str) != 16 {
+		return 0, errors.New("invalid ID")
+	}
+
 	var buf [8]byte
 	n, err := hex.Decode(buf[:], s2b(str))
 
